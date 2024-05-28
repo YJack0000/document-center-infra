@@ -1,0 +1,35 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-api-prefix
+  namespace: document-center
+spec:
+  stripPrefixRegex:
+    regex:
+      - "^/api"
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: document-center-ingress
+  namespace: document-center
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`document-center.cerana.tech`) && PathPrefix(`/api`)
+    kind: Rule
+    services:
+      - name: document-center-be-service
+        port: 80
+    middlewares:
+      - name: strip-api-prefix
+  - match: Host(`document-center.cerana.tech`) && PathPrefix(`/`)
+    kind: Rule
+    services:
+      - name: document-center-fe-service
+        port: 80
+  tls:
+    secretName: cloudflare-origin-ca
+
